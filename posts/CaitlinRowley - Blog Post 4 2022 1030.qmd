@@ -1,0 +1,137 @@
+---
+title: "CaitlinRowley - Blog Post 4"
+author: "Caitlin Rowley"
+editor: visual
+---
+
+I have switched data sets for future blog posts. I will be using open-ended survey responses from a 1996 study titled *Survey of Gun Owners in the United States*.
+
+For the study, respondents were asked six qualifying questions related to: (1) gun ownership, (2) gun-carrying practices, (3) gun display against the respondent, (4) gun use in self-defense against animals, (5) gun use in self-defense against people, and (6) other weapons used in self-defense. A "yes" response to a qualifying question led to a series of additional questions on the same topic as the qualifying question.
+
+The open-ended responses include descriptions specifically related to the following questions: (1) where the respondent was when he or she displayed a gun (in self-defense or otherwise), (2) specific reasons why the respondent displayed a gun, (3) how the other individual reacted when the respondent displayed the gun, (4) how the individual knew the respondent had a gun, (5) whether the police were contacted for specific self-defense events, and (6) if not, why not.
+
+I will focus on the following research question: Can we identify the most common circumstance in which respondents displayed a gun? I am hoping that "circumstance" can include references to both the catalyst in the situation and the environment.
+
+```{r}
+# install packages:
+
+install.packages("RColorBrewer")
+install.packages("stopwords")
+
+# load libraries: 
+
+library(tidyverse)
+library(dplyr)
+library(quanteda)
+library(magrittr)
+library(RColorBrewer)
+library(wordcloud)
+library(tidytext)
+library(stopwords)
+library(tm)
+library(quanteda.textplots)
+library(tokenizers)
+
+# read in data:
+
+Survey <- read_csv("C:\\Users\\caitr\\OneDrive\\Documents\\DACSS\\DACSS 679\\DACSS 697\\DACSS 697 - Survey.csv", col_names = TRUE)
+
+#rename columns:
+
+names(Survey) <- c('Respondent_ID','Survey_Question', 'Code', 'Open_Ended_Response')
+print(Survey)
+
+# remove duplicate observations: 
+
+Survey_unique <- distinct(Survey)
+
+Survey_unique %>% 
+    separate_rows(Open_Ended_Response) %>% 
+    distinct() %>%
+    nrow
+
+```
+
+There are 812 rows in this data frame and 4 columns. The four columns represent the following variables: survey respondent ID ('Respondent_ID), survey question ('Survey_Question'), response code ('Code'), and verbatim open-ended responses ('Open_Ended_Responses'). Each of the 812 rows now represents a unique observation. Additionally, there are 8134 unique words across all open-ended responses.
+
+I will next create a corpus and remove both capitalization and punctuation from all open-ended responses.
+
+```{r}
+# create a corpus:
+
+Survey_corpus <- corpus(Survey_unique$Open_Ended_Response)
+head(Survey_corpus)
+
+# tokenize, remove capitalization and punctuation:
+
+Survey_tokens <- tokens(Survey_corpus, 
+    remove_punct = T)
+Survey_tokens <- tokens_tolower(Survey_tokens)
+head(Survey_tokens)
+
+# remove stopwords separately: 
+
+Survey_tokens_stopwords <- tokens_select(Survey_tokens,
+                                       pattern = stopwords("en"),
+                                       selection = "remove")
+
+```
+
+I will next extract features from my corpus by creating a document feature matrix. From there, I will be able to generate data visualizations.
+
+```{r}
+# create document feature matrix:
+
+Survey_dfm <- dfm(Survey_tokens_stopwords)
+
+# identify 10 most common words:
+
+topfeatures(Survey_dfm, 10)
+
+# create a wordcloud:
+
+textplot_wordcloud(Survey_dfm, min_count = 5, max_words = 50, random_order = FALSE)
+```
+
+Next, I will generate a feature co-occurrence matrix:
+
+```{r}
+# create a dfm that is limited to words that appear frequently (more than 30% of responses).
+
+Survey_dfm_freq <- dfm_trim(Survey_dfm, min_termfreq = 30)
+Survey_dfm_freq <- dfm_trim(Survey_dfm_freq, min_docfreq = .3, docfreq_type = "prop")
+
+# use dfm to create a feature co-occurring matrix:
+
+Survey_fcm <- fcm(Survey_dfm_freq)
+
+# check dimensions:
+
+dim(Survey_fcm)
+
+```
+
+The first time I ran this chunk of code, the dimensions of the feature co-occurring matrix were shown to be 395 rows by 395 columns. After re-running the codes after reopening R, the dimensions are now showing as 0 rows by 0 columns.
+
+```{r}
+# identify the top 30 features from my feature co-occurrence matrix:
+
+myFeatures <- names(topfeatures(smaller_fcm, 30))
+
+# retain only the top 30 features as part of a new matrix:
+
+even_smaller_fcm <- fcm_select(smaller_fcm, pattern = myFeatures, selection = "keep")
+
+# check dimensions:
+
+dim(even_smaller_fcm)
+
+# compute size weight for vertices in network
+size <- log(colSums(even_smaller_fcm))
+
+# create plot
+textplot_network(even_smaller_fcm, vertex_size = size / max(size) * 3)
+
+```
+
+Next, I will apply dictionary approaches (most likely sentiment analysis) to my data.
