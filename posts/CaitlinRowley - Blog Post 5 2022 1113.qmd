@@ -1,6 +1,7 @@
 ---
 title: "CaitlinRowley - Blog Post 5"
 author: "Caitlin Rowley"
+date: 11/13/2022
 editor: visual
 ---
 
@@ -99,8 +100,8 @@ Next, I will generate a feature co-occurrence matrix:
 ```{r}
 # create a dfm that is limited to words that appear frequently (more than 30% of responses).
 
-Survey_dfm_freq <- dfm_trim(Survey_dfm, min_termfreq = 30)
-Survey_dfm_freq <- dfm_trim(Survey_dfm_freq, min_docfreq = .3, docfreq_type = "prop")
+Survey_dfm_freq <- dfm_trim(Survey_dfm, min_termfreq = 10)
+Survey_dfm_freq <- dfm_trim(Survey_dfm_freq, min_docfreq = .1, docfreq_type = "prop")
 
 # use dfm to create a feature co-occurring matrix:
 
@@ -113,8 +114,6 @@ dim(Survey_fcm)
 ```
 
 QUESTION: The first time I ran this chunk of code, the dimensions of the feature co-occurring matrix were shown to be 395 rows by 395 columns. After re-running the codes after reopening R, the dimensions are now showing as 0 rows by 0 columns.
-
-\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
 Next, I will apply the correlated topic modeling approach to my data set, since I do not have a covariate such as sentiment.
 
