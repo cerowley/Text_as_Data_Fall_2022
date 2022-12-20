@@ -1,6 +1,7 @@
 ---
 title: "CaitlinRowley - Blog Post 6"
 author: "Caitlin Rowley"
+date: 11/27/2022
 editor: visual
 ---
 
